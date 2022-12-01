@@ -4,6 +4,7 @@ import requests
 import urllib
 import re
 import os
+from sys import argv
 
 def get_valid_filename(s):
     s = str(s).strip().replace(' ', '_')
@@ -16,8 +17,7 @@ def export_posts(posts: list[str]):
         imgs = re.findall('data-src="(/thumbnail/data.*\\.(jpg|png|gif))"', text)
         imgs = ["https://kemono.party" + img[0] for img in imgs]
 
-        title = re.findall('<title>\n    &#34;(.*)&#34;', text)[0]
-        title = title if len(title) != 0 else post
+        title = re.findall('<title>\n\s+&#34;(.*)&#34;.*\s*<\/title>', text)[0]
 
         vids = re.findall('href="(/data/.*\\.(mp4|mkv|mov|avi|wmv))"', text)
         vids = ["https://kemono.party" + vid[0] for vid in vids]
@@ -29,7 +29,7 @@ def export_posts(posts: list[str]):
         if len(imgs + vids) == 0:
             continue
 
-        if not os.path.exists(title):
+        if not os.path.isdir(title):
             os.mkdir(title)
 
         for idx, url in enumerate(imgs + vids):
@@ -38,13 +38,15 @@ def export_posts(posts: list[str]):
             urllib.request.urlretrieve(url, f"{title}/{idx}{ext}")
 
 def export_user_by_id(id: int):
-    os.mkdir(str(id))
+    if not os.path.isdir(str(id)):
+        os.mkdir(str(id))
+
     os.chdir(str(id))
 
     idx = 0
     posts = []
     while True:
-        url = f"https://kemono.party/fanbox/user/3316400?o={idx}"
+        url = f"https://kemono.party/fanbox/user/{id}?o={idx}"
         text = requests.get(url).text
 
         print(url)
@@ -52,10 +54,10 @@ def export_user_by_id(id: int):
         if re.findall("Nobody here but us chickens!", text):
             break
 
-        posts.extend(["https://kemono.party/fanbox/user/3316400/post/" + text for text in re.findall('/post/(.*)"', text)])
+        posts.extend([f"https://kemono.party/fanbox/user/{id}/post/" + text for text in re.findall('/post/(.*)"', text)])
 
         idx+=50
 
     export_posts(posts)
 
-export_user_by_id(int(input("enter user id: ")))
+export_user_by_id(int(argv[1]))
