@@ -17,7 +17,7 @@ def export_posts(posts: list[str]):
         imgs = ["https://kemono.party" + img[0] for img in imgs]
 
         title = re.findall('<title>\n    &#34;(.*)&#34;', text)[0]
-        title = title if len(title) != 0 else get_valid_filename(post)
+        title = title if len(title) != 0 else post
 
         vids = re.findall('href="(/data/.*\\.(mp4|mkv|mov|avi|wmv))"', text)
         vids = ["https://kemono.party" + vid[0] for vid in vids]
@@ -26,20 +26,16 @@ def export_posts(posts: list[str]):
 
         title = get_valid_filename(title)
 
-        try:
+        if len(imgs + vids) == 0:
+            continue
+
+        if not os.path.exists(title):
             os.mkdir(title)
-        except Exception:
-            pass
 
-        for idx, img in enumerate(imgs):
-            print(img)
-            ext = os.path.splitext(f"{img}")[-1]
-            urllib.request.urlretrieve(img, f"{title}/{idx}{ext}")
-
-        for idx, vid in enumerate(vids):
-            print(vid)
-            ext = os.path.splitext(f"{vid}")[-1]
-            urllib.request.urlretrieve(vid, f"{title}/{idx}{ext}")
+        for idx, url in enumerate(imgs + vids):
+            print(url)
+            ext = os.path.splitext(f"{url}")[-1]
+            urllib.request.urlretrieve(url, f"{title}/{idx}{ext}")
 
 def export_user_by_id(id: int):
     os.mkdir(str(id))
