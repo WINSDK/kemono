@@ -1,7 +1,7 @@
 #!/bin/sh
 
 if [ -z "$1" ]; then
-    echo "must enter the name of a creator"
+    echo "must enter the id of a creator"
     exit 1
 fi
 
@@ -10,4 +10,4 @@ if [ ! -d "$1" ]; then
     exit 1
 fi
 
-find $1 | grep -E ".*(jpg|png|gif)" | tee >(imv)
+find $1 | grep -E ".*(jpg|png|gif)" | imv
