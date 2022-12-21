@@ -29,12 +29,12 @@ def export_posts(posts: list[str]):
         vids = re.findall('href="(/data/.*\\.(mp4|mkv|mov|avi|wmv))"', text)
         vids = ["https://kemono.party" + vid[0] for vid in vids]
 
-        print(f"-------- {title} --------")
-
         title = get_valid_filename(title)
 
         if len(imgs + vids) == 0:
             continue
+
+        print(f"-------- {title} --------")
 
         if not os.path.isdir(title):
             os.mkdir(title)
