@@ -4,11 +4,18 @@ import requests
 import urllib
 import re
 import os
-from sys import argv
+from sys import argv, exit
+
+def normalize_char(c):
+    if c == ' ':
+        return '_'
+    elif re.match(r'(?u)[^-\w.]', c):
+        return '�'
+    else:
+        return c
 
 def get_valid_filename(s):
-    s = str(s).strip().replace(' ', '_')
-    return re.sub(r'(?u)[^-\w.]', '', s)
+    return "".join([normalize_char(c) for c in s])
 
 def export_posts(posts: list[str]):
     for post in posts:
@@ -37,7 +44,17 @@ def export_posts(posts: list[str]):
             ext = os.path.splitext(f"{url}")[-1]
             urllib.request.urlretrieve(url, f"{title}/{idx}{ext}")
 
-def export_user_by_id(id: int):
+def validate_type(ty: str):
+    types = ["fanbox", "patreon", "gumroad", "subscribestar", "dlsite",
+             "discord", "fantia", "boosty", "afdian"]
+
+    if ty not in types:
+        print(f"unknown website: {ty}")
+        exit(1)
+
+def export_user_by_id(id: int, ty: str):
+    validate_type(ty)
+
     if not os.path.isdir(str(id)):
         os.mkdir(str(id))
 
@@ -46,18 +63,31 @@ def export_user_by_id(id: int):
     idx = 0
     posts = []
     while True:
-        url = f"https://kemono.party/fanbox/user/{id}?o={idx}"
+        url = f"https://kemono.party/{ty}/user/{id}?o={idx}"
         text = requests.get(url).text
+        homepage = re.findall(
+            "<meta property=\"og:url\" content=\"https://kemono.party/artists\">",
+            text
+        )
+
+        if homepage:
+            print(f"page not found, id: {id}")
+            exit(1)
 
         print(url)
 
         if re.findall("Nobody here but us chickens!", text):
             break
 
-        posts.extend([f"https://kemono.party/fanbox/user/{id}/post/" + text for text in re.findall('/post/(.*)"', text)])
+        posts.extend([f"https://kemono.party/{ty}/user/{id}/post/" + text for text in re.findall('/post/(.*)"', text)])
 
         idx+=50
 
     export_posts(posts)
 
-export_user_by_id(int(argv[1]))
+if __name__ == "__main__":
+    try:
+        export_user_by_id(int(argv[1]), argv[2])
+    except (IndexError, ValueError):
+        print("format: ./parse id website (fanbox, patreon, etc..)")
+        exit(1)
